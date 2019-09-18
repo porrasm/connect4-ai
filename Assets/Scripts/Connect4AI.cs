@@ -6,7 +6,7 @@ using UnityEngine;
 public class Connect4AI {
 
     private int maxTreeCount;
-    private int maxDepth = 5;
+    private int maxDepth = 6;
     private int count;
 
     private byte color;
@@ -30,13 +30,17 @@ public class Connect4AI {
         int maxValue = int.MinValue;
 
         for (int i = 0; i < game.Children.Count; i++) {
-            
+
+            Debug.Log("i: " + i + "; child column: " + game.Children[i].Turn.Column + ", value: " + game.Children[i].Turn.Value);
+
             if (game.Children[i].Turn.Value > maxValue) {
                 maxIndex = i;
                 maxValue = game.Children[i].Turn.Value;
             }
-
         }
+
+        Debug.Log("End count: " + count);
+        Debug.Log("Child count: " + game.Children.Count);
 
         return game.Children[maxIndex].Turn.Column;
     }
@@ -47,11 +51,16 @@ public class Connect4AI {
         count++;
 
         if (count >= maxTreeCount || depth > maxDepth) {
+           // Debug.Log("Reached max depth/count");
             return HeurMax(node);
         }
 
-        if (GameOver(node.Turn)) {
-            return node.Turn.Value;
+        int gameOverValue = int.MinValue;
+
+        if (GameOver(node.Turn, out gameOverValue)) {
+          //  Debug.Log("GAME OVER: " + gameOverValue);
+           // PrintField(node.Turn.Field);
+            return gameOverValue;
         }
 
         int value = int.MinValue;
@@ -72,11 +81,16 @@ public class Connect4AI {
         count++;
 
         if (count >= maxTreeCount || depth > maxDepth) {
+            //Debug.Log("Reached max depth/count");
             return HeurMin(node);
         }
 
-        if (GameOver(node.Turn)) {
-            return node.Turn.Value;
+        int gameOverValue = int.MinValue;
+
+        if (GameOver(node.Turn, out gameOverValue)) {
+           // Debug.Log("GAME OVER: " + gameOverValue);
+           // PrintField(node.Turn.Field);
+            return gameOverValue;
         }
 
         int value = int.MaxValue;
@@ -98,10 +112,13 @@ public class Connect4AI {
         int xLen = node.Turn.Field.GetLength(0);
         int yLen = node.Turn.Field.GetLength(1);
 
-        for (int x = 0; x < xLen; x++) {
-            if (node.Turn.Field[x, yLen - 1] == 0) {
+        int checkHeight = yLen - 1;
+        //checkHeight = 0;
 
-                Turn turn = new Turn(NewField(node.Turn.Field, x), 0, (sbyte)x);
+        for (int x = 0; x < xLen; x++) {
+            if (node.Turn.Field[x, checkHeight] == 0) {
+
+                Turn turn = new Turn(NewField(CopyField(node.Turn.Field), x), 0, (sbyte)x);
 
                 node.Children.Add(new TreeNode(turn));
             }
@@ -112,25 +129,66 @@ public class Connect4AI {
         int yLen = field.GetLength(1);
 
         for (int y = yLen - 1; y >= 0; y--) {
-            if (field[x, y] != 0) {
+            if (field[x, y] == 0) {
                 field[x, y] = color;
                 return field;
             }
         }
 
+       // PrintField(field);
+
         throw new SystemException("Could not create game field");
         return null;
+    }
+    public void PrintField(byte[,] field) {
+        
+        int xLen = field.GetLength(0);
+        int yLen = field.GetLength(1);
+
+        string rows = "";
+
+        for (int x = 0; x <xLen; x++) {
+
+            string row = "";
+
+            for (int y = yLen - 1; y >= 0; y--) {
+                int val = field[x, y];
+
+                switch (val) {
+                    case 0:
+                        row += "0 ";
+                        break;
+                    case 1:
+                        row += "B ";
+                        break;
+                    case 2:
+                        row += "R ";
+                        break;
+                }
+            }
+
+            rows += row + "\n";
+        }
+
+        Debug.Log(rows);
     }
 
     private int HeurMax(TreeNode node) {
         return 0;
+        return (int)(UnityEngine.Random.value * 2 - 1);
+
+        Debug.Log("Heur max");
+        return -1;
     }
     private int HeurMin(TreeNode node) {
         return 0;
+        return (int)(UnityEngine.Random.value * 2 - 1);
+        Debug.Log("Heru min");
+        return -1;
     }
 
 
-    private bool GameOver(Turn turn) {
+    private bool GameOver(Turn turn, out int endValue) {
 
         bool noEmpties = true;
 
@@ -144,16 +202,17 @@ public class Connect4AI {
                 if (turn.Field[x, y] == 0) {
                     noEmpties = false;
                 } else {
-                    if (GameOver(x, y, turn.Field)) {
+                    if (GameOver(x, y, turn.Field, out endValue)) {
                         return true;
                     }
                 }
             }
         }
 
+        endValue = int.MinValue;
         return noEmpties;
     }
-    private bool GameOver(int x, int y, byte[,] field) {
+    private bool GameOver(int x, int y, byte[,] field, out int endValue) {
 
         byte reference = field[x, y];
 
@@ -174,6 +233,9 @@ public class Connect4AI {
             }
         }
         if (wins == 3) {
+
+            endValue = reference == color ? 1 : -1;
+
             return true;
         }
 
@@ -188,6 +250,9 @@ public class Connect4AI {
             }
         }
         if (wins == 2) {
+
+            endValue = reference == color ? 1 : -1;
+
             return true;
         }
 
@@ -203,7 +268,21 @@ public class Connect4AI {
             }
         }
 
+        endValue = reference == color ? 1 : -1;
+
         return wins == 1;
+    }
+
+    private byte[,] CopyField(byte[,] field) {
+        byte[,] fieldCopy = new byte[field.GetLength(0), field.GetLength(1)];
+
+        for (int x = 0; x < field.GetLength(0); x++) {
+            for (int y = 0; y < field.GetLength(1); y++) {
+                fieldCopy[x, y] = field[x, y];
+            }
+        }
+
+        return fieldCopy;
     }
 }
 

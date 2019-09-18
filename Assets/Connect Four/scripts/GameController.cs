@@ -64,7 +64,7 @@ namespace ConnectFour {
         // Use this for initialization
         void Start() {
 
-            ai = new Connect4AI((byte)Piece.Red, 16807);
+            ai = new Connect4AI((byte)Piece.Red, 117649);
 
             int max = Mathf.Max(numRows, numColumns);
 
@@ -127,7 +127,10 @@ namespace ConnectFour {
             if (!isPlayersTurn) {
                 List<int> moves = GetPossibleMoves();
 
-                int column = ai.PlayTurn(field);
+                ai.PrintField(field);
+                ai.PrintField(CopyAndTurnField());
+
+                int column = ai.PlayTurn(CopyAndTurnField());
 
                 if (column >= 0) {
                     if (moves.Contains(column)) {
@@ -150,6 +153,27 @@ namespace ConnectFour {
                     Quaternion.identity) as GameObject;
 
             return g;
+        }
+        private byte[,] CopyAndTurnField() {
+
+            int xLen = field.GetLength(0);
+            int yLen = field.GetLength(1);
+
+            byte[,] fieldCopy = new byte[yLen, xLen];
+
+            for (int x = 0; x < xLen; x++) {
+                for (int y = 0; y < yLen; y++) {
+
+                    byte val = field[x, y];
+
+                    int invX = xLen - x - 1;
+                    int invY = yLen - y - 1;
+
+                    fieldCopy[y, invX] = val;
+                }
+            }
+
+            return fieldCopy;
         }
 
         void UpdatePlayAgainButton() {
