@@ -6,7 +6,7 @@ using UnityEngine;
 public class Connect4AI {
 
     private int maxTreeCount;
-    private int maxDepth = 6;
+    private int maxDepth = 3;
     private int count;
 
     private byte color;
@@ -14,7 +14,7 @@ public class Connect4AI {
 
     public Connect4AI(byte color, int treeCount) {
         this.color = color;
-        this.maxTreeCount = treeCount;
+        this.maxTreeCount = treeCount + 100000000;
     }
 
     public int PlayTurn(byte[,] field) {
@@ -27,7 +27,7 @@ public class Connect4AI {
         Max(game, 1);
 
         int maxIndex = int.MinValue;
-        int maxValue = int.MinValue;
+        float maxValue = float.MinValue;
 
         for (int i = 0; i < game.Children.Count; i++) {
 
@@ -46,7 +46,7 @@ public class Connect4AI {
     }
 
 
-    private int Max(TreeNode node, int depth) {
+    private float Max(TreeNode node, int depth) {
 
         count++;
 
@@ -63,7 +63,7 @@ public class Connect4AI {
             return gameOverValue;
         }
 
-        int value = int.MinValue;
+        float value = float.MinValue;
 
         AddPossibleTurns(ref node);
 
@@ -76,7 +76,7 @@ public class Connect4AI {
 
         return value;
     }
-    private int Min(TreeNode node, int depth) {
+    private float Min(TreeNode node, int depth) {
 
         count++;
 
@@ -93,7 +93,7 @@ public class Connect4AI {
             return gameOverValue;
         }
 
-        int value = int.MaxValue;
+        float value = float.MaxValue;
 
         AddPossibleTurns(ref node);
 
@@ -113,16 +113,28 @@ public class Connect4AI {
         int yLen = node.Turn.Field.GetLength(1);
 
         int checkHeight = yLen - 1;
+        checkHeight = 0;
         //checkHeight = 0;
 
         for (int x = 0; x < xLen; x++) {
             if (node.Turn.Field[x, checkHeight] == 0) {
 
+                Debug.Log("Possible turn: " + x);
+
                 Turn turn = new Turn(NewField(CopyField(node.Turn.Field), x), 0, (sbyte)x);
 
+                PrintField(turn.Field);
+
                 node.Children.Add(new TreeNode(turn));
+            } else {
+                Debug.Log("Check height: " + checkHeight);
+                Debug.Log("Not possible turn " + x + "\nval (" + x + ", " + checkHeight + "): " + node.Turn.Field[x, checkHeight]);
+                PrintField(node.Turn.Field);  
             }
         }
+
+        Debug.Log("Added possible turns: " + node.Children.Count);
+        PrintField(node.Turn.Field);
     }
     private byte[,] NewField(byte[,] field, int x) {
 
@@ -173,14 +185,16 @@ public class Connect4AI {
         Debug.Log(rows);
     }
 
-    private int HeurMax(TreeNode node) {
+    private float HeurMax(TreeNode node) {
+        return UnityEngine.Random.value;
         return 0;
         return (int)(UnityEngine.Random.value * 2 - 1);
 
         Debug.Log("Heur max");
         return -1;
     }
-    private int HeurMin(TreeNode node) {
+    private float HeurMin(TreeNode node) {
+        return UnityEngine.Random.value;
         return 0;
         return (int)(UnityEngine.Random.value * 2 - 1);
         Debug.Log("Heru min");
@@ -288,10 +302,10 @@ public class Connect4AI {
 
 public struct Turn {
     public byte[,] Field;
-    public int Value;
+    public float Value;
     public sbyte Column;
 
-    public Turn(byte[,] field, sbyte value, sbyte column) {
+    public Turn(byte[,] field, float value, sbyte column) {
         this.Field = field;
         this.Value = value;
         this.Column = column;

@@ -127,8 +127,8 @@ namespace ConnectFour {
             if (!isPlayersTurn) {
                 List<int> moves = GetPossibleMoves();
 
-                ai.PrintField(field);
-                ai.PrintField(CopyAndTurnField());
+              //  ai.PrintField(field);
+              //  ai.PrintField(CopyAndTurnField());
 
                 int column = ai.PlayTurn(CopyAndTurnField());
 

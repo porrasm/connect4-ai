@@ -17,7 +17,7 @@ public class TreeNode {
     public void Add(TreeNode node) {
         Children.Add(node);
     }
-    public void SetTurnValue(int value) {
+    public void SetTurnValue(float value) {
         turn.Value = value;
     }
 }
