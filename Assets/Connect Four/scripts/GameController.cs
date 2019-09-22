@@ -6,7 +6,7 @@ namespace ConnectFour {
     public class GameController : MonoBehaviour {
         enum Piece {
             Empty = 0,
-            Blue = 1,
+            Yellow = 1,
             Red = 2
         }
 
@@ -64,7 +64,7 @@ namespace ConnectFour {
         // Use this for initialization
         void Start() {
 
-            ai = new Connect4AI((byte)Piece.Red, 117649);
+            ai = new Connect4AI((byte)Piece.Red, (byte)Piece.Yellow, 117649);
 
             int max = Mathf.Max(numRows, numColumns);
 
@@ -127,8 +127,10 @@ namespace ConnectFour {
             if (!isPlayersTurn) {
                 List<int> moves = GetPossibleMoves();
 
-              //  ai.PrintField(field);
-              //  ai.PrintField(CopyAndTurnField());
+                //  ai.PrintField(field);
+                //  ai.PrintField(CopyAndTurnField());
+
+                Logger.Log("possible moves: " + moves.Count);
 
                 int column = ai.PlayTurn(CopyAndTurnField());
 
@@ -140,6 +142,7 @@ namespace ConnectFour {
                         spawnPos = new Vector3(column, 0, 0);
                     } else {
                         Application.Quit(1);
+                        print("Ai played " + column);
                         throw new System.Exception("AI player invalid turn");
                     }
                 }
@@ -159,7 +162,7 @@ namespace ConnectFour {
             int xLen = field.GetLength(0);
             int yLen = field.GetLength(1);
 
-            byte[,] fieldCopy = new byte[yLen, xLen];
+            byte[,] fieldCopy = new byte[xLen, yLen];
 
             for (int x = 0; x < xLen; x++) {
                 for (int y = 0; y < yLen; y++) {
@@ -169,7 +172,7 @@ namespace ConnectFour {
                     int invX = xLen - x - 1;
                     int invY = yLen - y - 1;
 
-                    fieldCopy[y, invX] = val;
+                    fieldCopy[x, invY] = val;
                 }
             }
 
@@ -282,7 +285,7 @@ namespace ConnectFour {
             for (int i = numRows - 1; i >= 0; i--) {
                 if (field[x, i] == 0) {
                     foundFreeCell = true;
-                    field[x, i] = isPlayersTurn ? (byte)Piece.Blue : (byte)Piece.Red;
+                    field[x, i] = isPlayersTurn ? (byte)Piece.Yellow : (byte)Piece.Red;
                     endPosition = new Vector3(x, i * -1, startPosition.z);
 
                     break;
@@ -337,7 +340,7 @@ namespace ConnectFour {
                     int layermask = isPlayersTurn ? (1 << 8) : (1 << 9);
 
                     // If its Players turn ignore red as Starting piece and wise versa
-                    if (field[x, y] != (isPlayersTurn ? (int)Piece.Blue : (int)Piece.Red)) {
+                    if (field[x, y] != (isPlayersTurn ? (int)Piece.Yellow : (int)Piece.Red)) {
                         continue;
                     }
 

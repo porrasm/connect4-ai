@@ -6,14 +6,16 @@ using UnityEngine;
 public class Connect4AI {
 
     private int maxTreeCount;
-    private int maxDepth = 3;
+    private int maxDepth = 6;
     private int count;
 
-    private byte color;
+    private byte colorMax;
+    private byte colorMin;
     private TreeNode game;
 
-    public Connect4AI(byte color, int treeCount) {
-        this.color = color;
+    public Connect4AI(byte color, byte otherColor, int treeCount) {
+        this.colorMax = color;
+        this.colorMin = otherColor;
         this.maxTreeCount = treeCount + 100000000;
     }
 
@@ -31,16 +33,11 @@ public class Connect4AI {
 
         for (int i = 0; i < game.Children.Count; i++) {
 
-            Debug.Log("i: " + i + "; child column: " + game.Children[i].Turn.Column + ", value: " + game.Children[i].Turn.Value);
-
             if (game.Children[i].Turn.Value > maxValue) {
                 maxIndex = i;
                 maxValue = game.Children[i].Turn.Value;
             }
         }
-
-        Debug.Log("End count: " + count);
-        Debug.Log("Child count: " + game.Children.Count);
 
         return game.Children[maxIndex].Turn.Column;
     }
@@ -51,21 +48,24 @@ public class Connect4AI {
         count++;
 
         if (count >= maxTreeCount || depth > maxDepth) {
-           // Debug.Log("Reached max depth/count");
+            // asd("Reached max depth/count");
             return HeurMax(node);
         }
 
         int gameOverValue = int.MinValue;
 
-        if (GameOver(node.Turn, out gameOverValue)) {
-          //  Debug.Log("GAME OVER: " + gameOverValue);
-           // PrintField(node.Turn.Field);
+        if (GameOver(node.Turn, colorMax, out gameOverValue)) {
+
+            if (gameOverValue == -1) {
+                Logger.Log("Found losing turn MAX: " + node.Turn.Field);
+            }
+
             return gameOverValue;
         }
 
         float value = float.MinValue;
 
-        AddPossibleTurns(ref node);
+        AddPossibleTurns(colorMax, ref node);
 
         for (int i = 0; i < node.Children.Count; i++) {
 
@@ -81,21 +81,24 @@ public class Connect4AI {
         count++;
 
         if (count >= maxTreeCount || depth > maxDepth) {
-            //Debug.Log("Reached max depth/count");
+            //asd("Reached max depth/count");
             return HeurMin(node);
         }
 
         int gameOverValue = int.MinValue;
 
-        if (GameOver(node.Turn, out gameOverValue)) {
-           // Debug.Log("GAME OVER: " + gameOverValue);
-           // PrintField(node.Turn.Field);
+        if (GameOver(node.Turn, colorMin, out gameOverValue)) {
+            
+            if (gameOverValue == -1) {
+                Logger.Log("Found losing turn MIN: " + node.Turn.Field);
+            }
+
             return gameOverValue;
         }
 
         float value = float.MaxValue;
 
-        AddPossibleTurns(ref node);
+        AddPossibleTurns(colorMin, ref node);
 
         for (int i = 0; i < node.Children.Count; i++) {
 
@@ -107,107 +110,91 @@ public class Connect4AI {
         return value;
     }
 
-    private void AddPossibleTurns(ref TreeNode node) {
+    private void AddPossibleTurns(byte color, ref TreeNode node) {
 
         int xLen = node.Turn.Field.GetLength(0);
         int yLen = node.Turn.Field.GetLength(1);
 
         int checkHeight = yLen - 1;
-        checkHeight = 0;
         //checkHeight = 0;
 
         for (int x = 0; x < xLen; x++) {
             if (node.Turn.Field[x, checkHeight] == 0) {
 
-                Debug.Log("Possible turn: " + x);
-
-                Turn turn = new Turn(NewField(CopyField(node.Turn.Field), x), 0, (sbyte)x);
-
-                PrintField(turn.Field);
+                Turn turn = new Turn(NewField(CopyField(node.Turn.Field), x, color), 0, (sbyte)x);
 
                 node.Children.Add(new TreeNode(turn));
             } else {
-                Debug.Log("Check height: " + checkHeight);
-                Debug.Log("Not possible turn " + x + "\nval (" + x + ", " + checkHeight + "): " + node.Turn.Field[x, checkHeight]);
-                PrintField(node.Turn.Field);  
             }
         }
-
-        Debug.Log("Added possible turns: " + node.Children.Count);
-        PrintField(node.Turn.Field);
     }
-    private byte[,] NewField(byte[,] field, int x) {
+    private byte[,] NewField(byte[,] field, int x, byte color) {
 
         int yLen = field.GetLength(1);
 
-        for (int y = yLen - 1; y >= 0; y--) {
+        for (int y = 0; y < yLen; y++) {
             if (field[x, y] == 0) {
                 field[x, y] = color;
                 return field;
             }
         }
 
-       // PrintField(field);
+        // PrintField(field);
 
         throw new SystemException("Could not create game field");
         return null;
     }
     public void PrintField(byte[,] field) {
-        
+
         int xLen = field.GetLength(0);
         int yLen = field.GetLength(1);
 
         string rows = "";
 
-        for (int x = 0; x <xLen; x++) {
-
-            string row = "";
-
-            for (int y = yLen - 1; y >= 0; y--) {
-                int val = field[x, y];
-
-                switch (val) {
-                    case 0:
-                        row += "0 ";
-                        break;
-                    case 1:
-                        row += "B ";
-                        break;
-                    case 2:
-                        row += "R ";
-                        break;
-                }
-            }
-
-            rows += row + "\n";
+        for (int y = yLen - 1; y >= 0; y--) {
+            rows += RowString(field, y) + "\n";
         }
 
-        Debug.Log(rows);
+        Logger.Log(rows);
+    }
+    private string RowString(byte[,] field, int row) {
+
+        string rowString = row + ": ";
+
+        for (int x = 0; x < field.GetLength(0); x++) {
+
+            int val = field[x, row];
+
+            switch (val) {
+                case 0:
+                    rowString += "0 ";
+                    break;
+                case 1:
+                    rowString += "Y ";
+                    break;
+                case 2:
+                    rowString += "R ";
+                    break;
+            }
+        }
+
+        return rowString;
     }
 
     private float HeurMax(TreeNode node) {
         return UnityEngine.Random.value;
-        return 0;
-        return (int)(UnityEngine.Random.value * 2 - 1);
-
-        Debug.Log("Heur max");
-        return -1;
     }
     private float HeurMin(TreeNode node) {
         return UnityEngine.Random.value;
-        return 0;
-        return (int)(UnityEngine.Random.value * 2 - 1);
-        Debug.Log("Heru min");
-        return -1;
     }
 
 
-    private bool GameOver(Turn turn, out int endValue) {
+    private bool GameOver(Turn turn, byte color, out int endValue) {
 
         bool noEmpties = true;
 
         if (turn.Field == null) {
-            Debug.Log("Turn field null");
+            Logger.Log("Turn field null");
         }
 
         for (int x = 0; x < turn.Field.GetLength(0); x++) {
@@ -216,7 +203,11 @@ public class Connect4AI {
                 if (turn.Field[x, y] == 0) {
                     noEmpties = false;
                 } else {
-                    if (GameOver(x, y, turn.Field, out endValue)) {
+
+                    int end = GameOver(x, y, turn.Field, color);
+
+                    if (end != 0) {
+                        endValue = end;
                         return true;
                     }
                 }
@@ -226,7 +217,7 @@ public class Connect4AI {
         endValue = int.MinValue;
         return noEmpties;
     }
-    private bool GameOver(int x, int y, byte[,] field, out int endValue) {
+    private int GameOver(int x, int y, byte[,] field, byte color) {
 
         byte reference = field[x, y];
 
@@ -246,12 +237,6 @@ public class Connect4AI {
                 break;
             }
         }
-        if (wins == 3) {
-
-            endValue = reference == color ? 1 : -1;
-
-            return true;
-        }
 
         // Check up
         for (int i = 1; i < 4; i++) {
@@ -262,12 +247,6 @@ public class Connect4AI {
                 wins--;
                 break;
             }
-        }
-        if (wins == 2) {
-
-            endValue = reference == color ? 1 : -1;
-
-            return true;
         }
 
         //Check up-right
@@ -282,9 +261,19 @@ public class Connect4AI {
             }
         }
 
-        endValue = reference == color ? 1 : -1;
+        int refValue = reference == color ? 1 : -1;
 
-        return wins == 1;
+        int endValue = wins * refValue;
+
+        if (endValue < 0) {
+            Logger.Log("Found end value with negative: " + refValue);
+            PrintField(field);
+        } else if (endValue > 0) {
+            Logger.Log("Found end value with positive: " + refValue);
+            PrintField(field);
+        }
+
+        return endValue;
     }
 
     private byte[,] CopyField(byte[,] field) {
